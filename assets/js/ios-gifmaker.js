@@ -15,8 +15,8 @@
     trimEnd: 2.2,
     
     // Settings 参数 (1:1 原版默认)
-    fps: 10, // 移动端首选 10 FPS，平衡速度与画质
-    resolution: 360, // 移动端默认 360p，保证流畅极速
+    fps: 12, // 12 FPS 平滑流畅
+    resolution: 720, // 默认 720p HD 高清模式
     speed: 1.0,
     loop: true,
     
@@ -52,6 +52,8 @@
   // 播放器与时间轴
   const trimVideo = document.getElementById('trim-video-player');
   const previewVideoLoop = document.getElementById('preview-video-loop');
+  const previewImageLoop = document.getElementById('preview-image-loop');
+  let burstPreviewTimer = null;
   const btnPlayPause = document.getElementById('btn-play-pause');
   const iconPlay = document.getElementById('icon-play');
   const iconPause = document.getElementById('icon-pause');
@@ -198,10 +200,7 @@
   // 监听连拍相片选入
   fileImages.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
-    if (files.length < 2) {
-      alert('请至少选择 2 张连续照片以生成 GIF！');
-      return;
-    }
+    if (!files || files.length === 0) return;
     loadBurstFromFiles(files);
   });
 
@@ -388,7 +387,15 @@
 
   // Settings: 实时循环播放同步
   function syncLivePreview() {
+    if (burstPreviewTimer) {
+      clearInterval(burstPreviewTimer);
+      burstPreviewTimer = null;
+    }
+
     if (state.sourceType === 'video' && previewVideoLoop.src) {
+      previewVideoLoop.classList.remove('hidden');
+      if (previewImageLoop) previewImageLoop.classList.add('hidden');
+
       previewVideoLoop.playbackRate = state.speed;
       previewVideoLoop.currentTime = state.trimStart;
       previewVideoLoop.play().catch(() => {});
@@ -398,6 +405,23 @@
           previewVideoLoop.currentTime = state.trimStart;
         }
       };
+    } else if (state.sourceType === 'burst' && state.burstImages && state.burstImages.length > 0) {
+      previewVideoLoop.classList.add('hidden');
+      if (previewImageLoop) {
+        previewImageLoop.classList.remove('hidden');
+        if (state.burstImages.length === 1) {
+          previewImageLoop.src = URL.createObjectURL(state.burstImages[0]);
+        } else {
+          let idx = 0;
+          const urls = state.burstImages.map(f => URL.createObjectURL(f));
+          previewImageLoop.src = urls[0];
+          const delay = Math.max(150, Math.round(350 / state.speed));
+          burstPreviewTimer = setInterval(() => {
+            idx = (idx + 1) % urls.length;
+            previewImageLoop.src = urls[idx];
+          }, delay);
+        }
+      }
     }
   }
 
@@ -457,7 +481,8 @@
     let resFactor = 0.5;
     if (state.resolution === 240) resFactor = 0.25;
     if (state.resolution === 360) resFactor = 0.45;
-    if (state.resolution === 480) resFactor = 0.75;
+    if (state.resolution === 480) resFactor = 0.65;
+    if (state.resolution === 720) resFactor = 1.0;
     if (state.resolution === 'original') resFactor = 1.3;
 
     const qualityFactor = state.quality / 8;
@@ -468,8 +493,8 @@
 
   // 重置 Settings
   document.getElementById('btn-settings-reset').addEventListener('click', () => {
-    state.fps = 10;
-    state.resolution = 360;
+    state.fps = 12;
+    state.resolution = 720;
     state.speed = 1.0;
     state.loop = true;
     state.reverse = false;
@@ -477,8 +502,8 @@
     state.quality = 8;
 
     controlFps.querySelectorAll('.fps-btn').forEach(b => b.classList.toggle('active', b.dataset.fps === '10'));
-    const r360 = document.querySelector('input[name="resolution"][value="360"]');
-    if (r360) r360.checked = true;
+    const r720 = document.querySelector('input[name="resolution"][value="720"]');
+    if (r720) r720.checked = true;
     sliderSpeed.value = 1.0;
     lblSpeedVal.innerText = '1.0x';
     switchLoop.checked = true;
@@ -560,10 +585,12 @@
 
       const totalFrames = Math.max(3, Math.min(60, Math.round(dur * fps)));
 
-      let targetWidth = 320;
+      let targetWidth = 720;
       if (state.resolution === 240) targetWidth = 240;
+      else if (state.resolution === 360) targetWidth = 360;
       else if (state.resolution === 480) targetWidth = 480;
-      else if (state.resolution === 'original') targetWidth = 480;
+      else if (state.resolution === 720) targetWidth = 720;
+      else if (state.resolution === 'original') targetWidth = Math.min(1080, trimVideo.videoWidth || 720);
 
       updateLoadingProgress(10, 'Initializing video frames...');
 
@@ -645,13 +672,64 @@
     });
   }
 
-  // 从连拍图片序列渲染 (Bursts)
+  // 从图片或连拍渲染 (支持单张微动和多张高清合成)
   async function renderFromBursts() {
     try {
-      updateLoadingProgress(20, 'Loading burst photos...');
-      const targetWidth = state.resolution === 240 ? 240 : (state.resolution === 360 ? 360 : 480);
+      updateLoadingProgress(20, 'Processing photo(s)...');
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      // 单张照片：自动生成细腻丝滑的呼吸微动效果 (Cinemagraph / Live Photo)
+      if (state.burstImages.length === 1) {
+        updateLoadingProgress(30, 'Generating live photo motion...');
+        const file = state.burstImages[0];
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise(r => img.onload = r);
+
+        let targetWidth = 720;
+        if (state.resolution === 240) targetWidth = 240;
+        else if (state.resolution === 360) targetWidth = 360;
+        else if (state.resolution === 480) targetWidth = 480;
+        else if (state.resolution === 720) targetWidth = 720;
+        else if (state.resolution === 'original') targetWidth = Math.min(1080, img.width);
+
+        const aspect = img.width / img.height;
+        const targetHeight = Math.round(targetWidth / aspect);
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        const numFrames = 10;
+        const frames = [];
+        for (let i = 0; i < numFrames; i++) {
+          const progress = i / (numFrames - 1);
+          const scale = 1.0 + 0.035 * Math.sin(progress * Math.PI);
+          const sw = img.width / scale;
+          const sh = img.height / scale;
+          const sx = (img.width - sw) / 2;
+          const sy = (img.height - sh) * 0.35;
+
+          ctx.clearRect(0, 0, targetWidth, targetHeight);
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+          frames.push({
+            dataUrl: canvas.toDataURL('image/jpeg', 0.95),
+            height: targetHeight
+          });
+          updateLoadingProgress(30 + Math.round((i / numFrames) * 35), "Generating frame " + (i + 1));
+        }
+
+        const delay = 0.12 / state.speed;
+        updateLoadingProgress(70, 'Encoding Ultra-HD GIF...');
+        encodeGifWithGifshot(frames, targetWidth, targetHeight, delay, (frames.length * delay));
+        return;
+      }
+
+      // 多张连续照片 (Bursts)
+      let targetWidth = 720;
+      if (state.resolution === 240) targetWidth = 240;
+      else if (state.resolution === 360) targetWidth = 360;
+      else if (state.resolution === 480) targetWidth = 480;
+      else if (state.resolution === 720) targetWidth = 720;
 
       const frameUrls = [];
       for (let i = 0; i < state.burstImages.length; i++) {
@@ -661,31 +739,35 @@
         await new Promise(r => img.onload = r);
 
         if (i === 0) {
+          if (state.resolution === 'original') {
+            targetWidth = Math.min(1080, img.width);
+          }
           const aspect = img.width / img.height;
           canvas.width = targetWidth;
           canvas.height = Math.round(targetWidth / aspect);
         }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         frameUrls.push({
-          dataUrl: canvas.toDataURL('image/jpeg', 0.85),
+          dataUrl: canvas.toDataURL('image/jpeg', 0.96),
           height: canvas.height
         });
 
         const progress = 20 + Math.round((i / state.burstImages.length) * 45);
-        updateLoadingProgress(progress, `Loaded photo ${i + 1}/${state.burstImages.length}`);
+        updateLoadingProgress(progress, "Loaded photo " + (i + 1));
       }
 
       let sequence = frameUrls;
       if (state.reverse) sequence = [...frameUrls].reverse();
       if (state.boomerang) sequence = frameUrls.concat([...frameUrls].slice(1, -1).reverse());
 
-      const delay = (0.35) / state.speed;
-      updateLoadingProgress(70, 'Encoding GIF...');
+      const delay = 0.35 / state.speed;
+      updateLoadingProgress(70, 'Encoding Ultra-HD GIF...');
       encodeGifWithGifshot(sequence, canvas.width, canvas.height, delay, (sequence.length * delay));
 
     } catch (e) {
       showLoading(false);
-      alert('连拍处理失败: ' + e.message);
+      alert('图片处理失败: ' + e.message);
     }
   }
 
@@ -693,13 +775,20 @@
   function encodeGifWithGifshot(frameObjects, width, height, frameInterval, approxDuration) {
     const rawImages = frameObjects.map(f => f.dataUrl || f);
 
+    // 根据选择的分辨率动态平衡画质与速度：720p/Original 使用 sampleInterval: 2-3 获得顶级画质
+    let sampleRate = 3;
+    if (state.resolution === 240) sampleRate = 10;
+    else if (state.resolution === 360) sampleRate = 6;
+    else if (state.resolution === 480) sampleRate = 4;
+    else if (state.resolution === 720 || state.resolution === 'original') sampleRate = 2;
+
     gifshot.createGIF({
       images: rawImages,
       gifWidth: width,
       gifHeight: height,
       interval: frameInterval,
       numWorkers: 2, // 使用 Worker 线程加速编码
-      sampleInterval: 10,
+      sampleInterval: sampleRate, // 极限色彩采样，彻底杜绝噪点色斑
       progressCallback: (pct) => {
         const p = 70 + Math.round(pct * 28);
         updateLoadingProgress(p, `Finalizing GIF (${Math.round(pct * 100)}%)`);

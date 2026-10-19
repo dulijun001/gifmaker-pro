@@ -164,20 +164,21 @@
         <!-- 实时循环预览窗口 (LIVE PREVIEW) -->
         <div class="relative bg-white rounded-2xl p-2 border border-gray-100 shadow-sm flex flex-col items-center">
           <div class="w-full aspect-square max-h-[260px] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center relative">
-            <video id="preview-video-loop" playsinline autoplay loop muted class="w-full h-full object-contain"></video>
+            <video id="preview-video-loop" playsinline autoplay loop muted class="w-full h-full object-contain hidden"></video>
+            <img id="preview-image-loop" class="w-full h-full object-contain hidden" alt="Preview">
             <div id="live-preview-badge" class="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white font-bold tracking-wider">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               LIVE PREVIEW
             </div>
             <div id="live-param-badge" class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white/90 font-mono">
-              <span id="lbl-live-fps">15 FPS</span> • <span id="lbl-live-res">480p</span> • <span id="lbl-live-speed">1.0x</span>
+              <span id="lbl-live-fps">12 FPS</span> • <span id="lbl-live-res">720p HD</span> • <span id="lbl-live-speed">1.0x</span>
             </div>
           </div>
 
           <!-- 快速参数药丸指示条 -->
           <div class="w-full flex items-center justify-between px-1 pt-2.5 text-xs text-gray-500 font-medium">
-            <span class="inline-flex items-center gap-1"><span class="text-blue-500 font-bold">⏱</span> <span id="pill-fps">15 FPS</span></span>
-            <span class="inline-flex items-center gap-1"><span class="text-indigo-500 font-bold">📐</span> <span id="pill-res">480p</span></span>
+            <span class="inline-flex items-center gap-1"><span class="text-blue-500 font-bold">⏱</span> <span id="pill-fps">12 FPS</span></span>
+            <span class="inline-flex items-center gap-1"><span class="text-indigo-500 font-bold">📐</span> <span id="pill-res">720p HD</span></span>
             <span class="inline-flex items-center gap-1"><span class="text-emerald-500 font-bold">⚡</span> <span id="pill-speed">1.0x</span></span>
             <span class="inline-flex items-center gap-1"><span class="text-amber-500 font-bold">🔁</span> <span id="pill-loop">Loop</span></span>
           </div>
@@ -216,9 +217,16 @@
             <label class="ios-list-item cursor-pointer">
               <div class="flex-1">
                 <div class="font-bold text-sm text-gray-900">480p</div>
-                <div class="text-xs text-gray-400">High quality</div>
+                <div class="text-xs text-gray-400">Standard HD</div>
               </div>
-              <input type="radio" name="resolution" value="480" checked class="ios-radio">
+              <input type="radio" name="resolution" value="480" class="ios-radio">
+            </label>
+            <label class="ios-list-item cursor-pointer">
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900 flex items-center gap-1.5">720p HD <span class="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">PRO</span></div>
+                <div class="text-xs text-gray-400">Crystal clear & crisp detail</div>
+              </div>
+              <input type="radio" name="resolution" value="720" checked class="ios-radio">
             </label>
             <label class="ios-list-item cursor-pointer">
               <div class="flex-1">
@@ -525,6 +533,6 @@
     </div>
   </div>
 
-  <script src="./assets/js/ios-gifmaker.js?v=20261019_fix4"></script>
+  <script src="./assets/js/ios-gifmaker.js?v=20261019_hd1"></script>
 </body>
 </html>
