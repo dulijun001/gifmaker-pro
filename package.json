@@ -1,0 +1,12 @@
+{
+  "name": "gifmaker-pro",
+  "version": "1.0.0",
+  "description": "GIF Maker - Video to GIF Official Website & SEO Articles Cloned by REA-Cloner Pro",
+  "scripts": {
+    "start": "npx serve -p 8080 .",
+    "dev": "python3 -m http.server 8080"
+  },
+  "keywords": ["gif-maker", "rea-cloner-pro", "seo-guides"],
+  "author": "liu nian (dulijuner)",
+  "license": "MIT"
+}

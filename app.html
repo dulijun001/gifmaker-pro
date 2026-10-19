@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh" class="h-full bg-[#f2f2f7]">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>GIF Maker — 原生体验</title>
+  <link rel="stylesheet" href="/assets/css/app-style.css">
+  <script src="/assets/js/vendor/gifshot.min.js"></script>
+</head>
+<body class="h-full w-full select-none text-[#1c1c1e] antialiased overflow-hidden flex flex-col font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','SF_Pro_Display','PingFang_SC','Helvetica_Neue',sans-serif]">
+
+  <!-- iOS 仿真状态栏占位 (安全区) -->
+  <div class="ios-status-bar">
+    <div class="status-time" id="status-time">09:41</div>
+    <div class="dynamic-island"></div>
+    <div class="status-icons">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 19.64 10.56 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+      <div class="battery"><div class="battery-level"></div></div>
+    </div>
+  </div>
+
+  <!-- 主视图容器 (路由/页面栈) -->
+  <main class="ios-viewport flex-1 relative overflow-hidden">
+
+    <!-- PAGE 1: HOME (相册选择 / 输入入口) -->
+    <section id="view-home" class="ios-view active">
+      <header class="ios-nav-bar">
+        <h1 class="nav-title font-bold text-lg">GIF Maker</h1>
+        <button id="btn-pro-badge" class="nav-btn-right text-xs bg-amber-500/10 text-amber-600 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">PRO ✨</button>
+      </header>
+
+      <div class="ios-scroll-content p-4 space-y-4">
+        <!-- 核心 Banner -->
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5 rounded-2xl shadow-sm relative overflow-hidden">
+          <div class="relative z-10">
+            <h2 class="text-xl font-bold tracking-tight">Create GIFs in Seconds</h2>
+            <p class="text-blue-100 text-xs mt-1">本地极速转换 • 无水印 • 高清导出</p>
+          </div>
+          <div class="absolute -right-4 -bottom-6 opacity-20 text-7xl font-mono select-none">GIF</div>
+        </div>
+
+        <!-- 3 大输入选择卡片 -->
+        <div class="space-y-3">
+          <!-- 选择视频 -->
+          <div class="action-card" id="card-pick-video">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">🎬</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-base text-gray-900">Videos to GIF</div>
+              <div class="text-xs text-gray-500">选择相册视频，精准截取动态帧</div>
+            </div>
+            <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+
+          <!-- 选择实况照片 / 连拍快照 -->
+          <div class="action-card" id="card-pick-live">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl">📸</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-base text-gray-900">Live Photos & Bursts</div>
+              <div class="text-xs text-gray-500">实况照片微动或连续多张照片转 GIF</div>
+            </div>
+            <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+
+          <!-- 连拍多图选择 (Photo Bursts) -->
+          <div class="action-card" id="card-pick-bursts">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">🖼️</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-base text-gray-900">Photo Bursts</div>
+              <div class="text-xs text-gray-500">挑选连拍动作相片序列一键合成</div>
+            </div>
+            <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+
+        <!-- 辅助导入与隐私提示 -->
+        <div class="pt-2 text-center">
+          <button id="btn-paste-clipboard" class="text-xs text-blue-600 font-semibold py-2 px-4 rounded-full bg-blue-50/80 active:bg-blue-100 transition-all inline-flex items-center gap-1">
+            📋 粘贴相册/剪贴板媒体
+          </button>
+        </div>
+
+        <div class="mt-6 p-3 rounded-xl bg-white/70 border border-gray-100 text-center">
+          <span class="inline-block text-xs text-gray-400">🔒 100% 本地设备转换，照片数据永不上传云端</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: STEP 1 - TRIM VIDEO (视频精准剪裁时间轴) -->
+    <section id="view-trim" class="ios-view">
+      <header class="ios-nav-bar">
+        <button id="btn-trim-back" class="nav-btn-left text-blue-600 text-sm font-medium flex items-center gap-1">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h1 class="nav-title font-semibold text-base">Trim Video</h1>
+        <div class="nav-btn-right w-8"></div>
+      </header>
+
+      <div class="ios-scroll-content flex flex-col justify-between p-4 pb-6">
+        <!-- 播放器预览区 -->
+        <div class="flex-1 flex flex-col items-center justify-center min-h-[220px] max-h-[360px] relative bg-black/5 rounded-2xl overflow-hidden shadow-inner">
+          <video id="trim-video-player" playsinline webkit-playsinline class="w-full h-full object-contain"></video>
+          <button id="btn-play-pause" class="absolute inset-0 m-auto w-14 h-14 bg-black/40 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-transform active:scale-90">
+            <svg id="icon-play" class="w-7 h-7 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" class="w-7 h-7 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <div class="absolute bottom-2 left-3 right-3 flex justify-between text-[11px] text-white/90 font-mono drop-shadow">
+            <span id="label-current-time">0:00.0</span>
+            <span id="label-total-time">0:00.0</span>
+          </div>
+        </div>
+
+        <!-- 时间轴与多帧缩略图条 -->
+        <div class="mt-4 space-y-3">
+          <div class="flex justify-between items-center text-sm font-semibold">
+            <span class="text-gray-900">Trim Selection</span>
+            <span id="label-trim-range" class="text-blue-600 font-mono">0:01.0 - 0:03.2</span>
+          </div>
+
+          <!-- iOS 缩略图时间轴容器 -->
+          <div class="timeline-container relative">
+            <div id="timeline-frames" class="timeline-frames-track">
+              <!-- JS 自动生成 8 帧抽样缩略图 -->
+            </div>
+            <!-- 双手柄滑动遮罩与视窗 -->
+            <div id="trim-highlight" class="trim-highlight-box">
+              <div id="trim-handle-left" class="trim-handle left-handle">
+                <div class="handle-dots"></div>
+              </div>
+              <div id="trim-handle-right" class="trim-handle right-handle">
+                <div class="handle-dots"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center text-xs text-gray-500 pt-1">
+            <div class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 font-semibold px-2.5 py-1 rounded-full text-[11px]">
+              ⏱ Duration: <span id="label-trim-duration">2.2s</span>
+            </div>
+            <span class="text-[11px] text-gray-400">Maximum GIF length: 10s</span>
+          </div>
+        </div>
+
+        <!-- 底部大按钮 -->
+        <div class="pt-6">
+          <button id="btn-trim-next" class="ios-btn-primary w-full">
+            Next Step <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: STEP 2 - GIF SETTINGS (核心设置与参数配置) -->
+    <section id="view-settings" class="ios-view">
+      <header class="ios-nav-bar">
+        <button id="btn-settings-back" class="nav-btn-left text-gray-600 p-1">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <h1 class="nav-title font-semibold text-base">GIF Settings</h1>
+        <button id="btn-settings-reset" class="nav-btn-right text-blue-600 text-sm font-medium">Reset</button>
+      </header>
+
+      <div class="ios-scroll-content p-4 space-y-4 pb-28">
+        <!-- 实时循环预览窗口 (LIVE PREVIEW) -->
+        <div class="relative bg-white rounded-2xl p-2 border border-gray-100 shadow-sm flex flex-col items-center">
+          <div class="w-full aspect-square max-h-[260px] bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center relative">
+            <video id="preview-video-loop" playsinline autoplay loop muted class="w-full h-full object-contain"></video>
+            <div id="live-preview-badge" class="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white font-bold tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              LIVE PREVIEW
+            </div>
+            <div id="live-param-badge" class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white/90 font-mono">
+              <span id="lbl-live-fps">15 FPS</span> • <span id="lbl-live-res">480p</span> • <span id="lbl-live-speed">1.0x</span>
+            </div>
+          </div>
+
+          <!-- 快速参数药丸指示条 -->
+          <div class="w-full flex items-center justify-between px-1 pt-2.5 text-xs text-gray-500 font-medium">
+            <span class="inline-flex items-center gap-1"><span class="text-blue-500 font-bold">⏱</span> <span id="pill-fps">15 FPS</span></span>
+            <span class="inline-flex items-center gap-1"><span class="text-indigo-500 font-bold">📐</span> <span id="pill-res">480p</span></span>
+            <span class="inline-flex items-center gap-1"><span class="text-emerald-500 font-bold">⚡</span> <span id="pill-speed">1.0x</span></span>
+            <span class="inline-flex items-center gap-1"><span class="text-amber-500 font-bold">🔁</span> <span id="pill-loop">Loop</span></span>
+          </div>
+        </div>
+
+        <!-- FRAMES PER SECOND (FPS 选择胶囊) -->
+        <div class="settings-group">
+          <div class="settings-header">FRAMES PER SECOND</div>
+          <div class="fps-segmented-control" id="control-fps">
+            <button class="fps-btn" data-fps="5">5</button>
+            <button class="fps-btn" data-fps="10">10</button>
+            <button class="fps-btn active" data-fps="15">15</button>
+            <button class="fps-btn" data-fps="20">20</button>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2 px-1">Higher FPS results in smoother motion but larger file size.</p>
+        </div>
+
+        <!-- RESOLUTION (分辨率单选列表) -->
+        <div class="settings-group">
+          <div class="settings-header">RESOLUTION</div>
+          <div class="ios-card-list">
+            <label class="ios-list-item cursor-pointer">
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">240p</div>
+                <div class="text-xs text-gray-400">Smallest file size</div>
+              </div>
+              <input type="radio" name="resolution" value="240" class="ios-radio">
+            </label>
+            <label class="ios-list-item cursor-pointer">
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">360p</div>
+                <div class="text-xs text-gray-400">Standard quality</div>
+              </div>
+              <input type="radio" name="resolution" value="360" class="ios-radio">
+            </label>
+            <label class="ios-list-item cursor-pointer">
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">480p</div>
+                <div class="text-xs text-gray-400">High quality</div>
+              </div>
+              <input type="radio" name="resolution" value="480" checked class="ios-radio">
+            </label>
+            <label class="ios-list-item cursor-pointer">
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">Original</div>
+                <div class="text-xs text-gray-400">Maximum resolution</div>
+              </div>
+              <input type="radio" name="resolution" value="original" class="ios-radio">
+            </label>
+          </div>
+        </div>
+
+        <!-- PLAYBACK SPEED (滑竿调速) -->
+        <div class="settings-group">
+          <div class="flex justify-between items-center mb-1">
+            <span class="settings-header mb-0">PLAYBACK SPEED</span>
+            <span id="lbl-speed-val" class="text-xs font-bold font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-600">1.0x</span>
+          </div>
+          <div class="ios-card p-3 flex items-center gap-3">
+            <span class="text-lg">🐢</span>
+            <input type="range" id="slider-speed" min="0.25" max="2.0" step="0.25" value="1.0" class="ios-slider flex-1">
+            <span class="text-lg">🐇</span>
+          </div>
+        </div>
+
+        <!-- LOOP GIF 开关 -->
+        <div class="ios-card-list">
+          <div class="ios-list-item">
+            <span class="font-semibold text-sm text-gray-900">Loop GIF</span>
+            <label class="ios-switch">
+              <input type="checkbox" id="switch-loop" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ADVANCED SETTINGS 入口 -->
+        <div class="ios-card-list">
+          <div class="ios-list-item cursor-pointer" id="entry-advanced">
+            <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm mr-2.5">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="font-bold text-sm text-gray-900">Advanced Settings</div>
+              <div class="text-[11px] text-gray-400">Reverse, Boomerang, Quality vs Size</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+
+        <!-- 底部生成动作按钮 -->
+        <div class="fixed bottom-16 left-0 right-0 p-4 bg-gradient-to-t from-[#f2f2f7] via-[#f2f2f7]/90 to-transparent">
+          <button id="btn-generate-gif" class="ios-btn-primary w-full shadow-lg shadow-blue-500/25">
+            Generate GIF 🪄
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 4: STEP 3 - ADVANCED SETTINGS (高阶倒放 / Boomerang / 质量) -->
+    <section id="view-advanced" class="ios-view">
+      <header class="ios-nav-bar">
+        <button id="btn-advanced-back" class="nav-btn-left text-blue-600 text-sm font-medium flex items-center gap-1">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+          Settings
+        </button>
+        <h1 class="nav-title font-semibold text-base">Advanced Settings</h1>
+        <button id="btn-advanced-save-nav" class="nav-btn-right text-blue-600 text-sm font-bold">Save</button>
+      </header>
+
+      <div class="ios-scroll-content p-4 space-y-4">
+        <!-- 播放控制组合 -->
+        <div class="settings-group">
+          <div class="settings-header">PLAYBACK OPTIONS</div>
+          <div class="ios-card-list">
+            <!-- 倒放 (Reverse Playback) -->
+            <div class="ios-list-item">
+              <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base mr-3">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">Reverse Playback</div>
+                <div class="text-[11px] text-gray-400">Play video from end to start</div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="switch-reverse">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Boomerang 往返循环 -->
+            <div class="ios-list-item">
+              <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base mr-3">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-900">Boomerang Mode</div>
+                <div class="text-[11px] text-gray-400">Loop forward and backward</div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="switch-boomerang">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 质量 vs 体积滑块 (Quality vs Size) -->
+        <div class="settings-group">
+          <div class="flex justify-between items-center mb-1">
+            <span class="settings-header mb-0">QUALITY VS SIZE</span>
+            <span id="lbl-est-size-header" class="text-xs font-bold font-mono text-blue-600">~551 KB ESTIMATED SIZE</span>
+          </div>
+
+          <div class="ios-card p-4 space-y-3">
+            <input type="range" id="slider-quality" min="1" max="10" value="8" class="ios-slider w-full">
+            <div class="flex justify-between text-[11px] text-gray-400">
+              <span>Smaller Size</span>
+              <span>Better Quality</span>
+            </div>
+
+            <div class="p-3 bg-blue-50/70 rounded-xl flex items-start gap-2 border border-blue-100/50">
+              <span class="text-blue-500 text-xs mt-0.5">ℹ️</span>
+              <p class="text-[11px] text-gray-600 leading-relaxed">
+                Higher quality increases the file size and may take longer to export on older devices.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部保存按钮 -->
+        <div class="pt-4">
+          <button id="btn-advanced-save" class="ios-btn-primary w-full">
+            Save Advanced Changes ✓
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 5: STEP 4 - EXPORT COMPLETE (生成完成与系统分享/保存) -->
+    <section id="view-export" class="ios-view">
+      <header class="ios-nav-bar">
+        <div class="w-8"></div>
+        <h1 class="nav-title font-semibold text-base">Export Complete</h1>
+        <button id="btn-export-done" class="nav-btn-right text-blue-600 text-sm font-bold">Done</button>
+      </header>
+
+      <div class="ios-scroll-content p-4 space-y-4 pb-20 text-center">
+        <!-- 成功圆环与标题 -->
+        <div class="flex flex-col items-center pt-2">
+          <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm mb-3">
+            <svg class="w-8 h-8 stroke-blue-600" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h2 class="text-2xl font-black tracking-tight text-gray-900">Your GIF is Ready!</h2>
+          <p class="text-xs text-gray-500 mt-1 max-w-xs">High-quality export finished. Share your creation or save it to your library.</p>
+        </div>
+
+        <!-- 动图大画幅预览卡片 -->
+        <div class="ios-card p-3 flex flex-col items-center">
+          <div class="w-full max-h-[300px] rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
+            <img id="export-result-img" class="w-full h-full object-contain" alt="Exported GIF">
+          </div>
+        </div>
+
+        <!-- 核心操作按钮组 -->
+        <div class="space-y-2.5 pt-1">
+          <button id="btn-share-gif" class="ios-btn-primary w-full flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            Share GIF
+          </button>
+
+          <button id="btn-save-photos" class="ios-btn-secondary w-full flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Save to Photos
+          </button>
+        </div>
+
+        <!-- 导出参数网格 (统计指标 1:1) -->
+        <div class="pt-2 text-left">
+          <div class="settings-header">EXPORT METRICS</div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="metric-card">
+              <div class="metric-label">⏱ DURATION</div>
+              <div id="metric-duration" class="metric-val">2.2s</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">🎞 FPS</div>
+              <div id="metric-fps" class="metric-val">15 fps</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">📐 RESOLUTION</div>
+              <div id="metric-res" class="metric-val">406x480</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">⚡ SPEED</div>
+              <div id="metric-speed" class="metric-val">1.0x</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">🔁 LOOP</div>
+              <div id="metric-loop" class="metric-val">Infinite</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">💾 FILE SIZE</div>
+              <div id="metric-size" class="metric-val text-blue-600 font-bold">972 KB</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3">
+          <button id="btn-create-another" class="text-xs text-blue-600 font-semibold py-2">
+            OR CREATE ANOTHER GIF
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MY GIFS (历史作品库) -->
+    <section id="view-library" class="ios-view">
+      <header class="ios-nav-bar">
+        <h1 class="nav-title font-bold text-lg">My GIFs</h1>
+        <button id="btn-lib-select" class="nav-btn-right text-blue-600 text-sm font-medium">Select</button>
+      </header>
+
+      <div class="ios-scroll-content p-4 pb-20">
+        <div id="lib-empty-state" class="flex flex-col items-center justify-center py-20 text-center">
+          <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-3xl mb-3">🖼️</div>
+          <h3 class="font-bold text-gray-800 text-base">No GIFs Yet</h3>
+          <p class="text-xs text-gray-400 mt-1 max-w-[200px]">GIFs you create will appear here in your local library.</p>
+        </div>
+
+        <div id="lib-grid" class="grid grid-cols-3 gap-2">
+          <!-- 动态历史记录卡片 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: PRO (会员特权) -->
+    <section id="view-pro" class="ios-view">
+      <header class="ios-nav-bar">
+        <h1 class="nav-title font-bold text-lg">Pro Version</h1>
+        <div class="w-8"></div>
+      </header>
+      <div class="ios-scroll-content p-5 space-y-4 pb-20 text-center">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-200 text-amber-900 mx-auto flex items-center justify-center text-4xl shadow-md">
+          👑
+        </div>
+        <h2 class="text-xl font-black text-gray-900">Unlock Everything Pro</h2>
+        <p class="text-xs text-gray-500 max-w-xs mx-auto">Enjoy unlimited HD exports, max FPS rendering, zero watermarks, and fast local processing.</p>
+
+        <div class="ios-card p-4 space-y-3 text-left">
+          <div class="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
+            <span class="text-emerald-500 font-bold">✓</span> 无限制高清分辨率导出
+          </div>
+          <div class="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
+            <span class="text-emerald-500 font-bold">✓</span> 支持 20 FPS 满血流畅率
+          </div>
+          <div class="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
+            <span class="text-emerald-500 font-bold">✓</span> 开启 Boomerang 往返循环与极速倒放
+          </div>
+          <div class="flex items-center gap-2.5 text-xs text-gray-800 font-medium">
+            <span class="text-emerald-500 font-bold">✓</span> 纯离线处理，隐私 100% 保护
+          </div>
+        </div>
+
+        <div class="pt-4">
+          <button id="btn-pro-activate" class="ios-btn-primary w-full bg-gradient-to-r from-amber-500 to-amber-600 shadow-amber-500/25">
+            You Have Full Pro Access ✨
+          </button>
+          <div class="text-[11px] text-gray-400 mt-2">Personal Developer Edition Enabled</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- iOS 底部 Tab 导航栏 (1:1 原生外观) -->
+  <nav class="ios-tab-bar">
+    <button class="tab-item active" data-tab="home">
+      <svg class="tab-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span class="tab-label">Home</span>
+    </button>
+    <button class="tab-item" data-tab="library">
+      <svg class="tab-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+      <span class="tab-label">My GIFs</span>
+    </button>
+    <button class="tab-item" data-tab="pro">
+      <svg class="tab-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <span class="tab-label">Pro</span>
+    </button>
+  </nav>
+
+  <!-- 隐藏的文件选择器 -->
+  <input type="file" id="app-file-video" accept="video/mp4,video/quicktime,video/mov,video/webm" class="hidden">
+  <input type="file" id="app-file-images" accept="image/*" multiple class="hidden">
+
+  <!-- 生成遮罩与进度 Modal -->
+  <div id="loading-modal" class="ios-modal-overlay hidden">
+    <div class="ios-loading-card">
+      <div class="ios-spinner"></div>
+      <div class="font-bold text-sm text-gray-900 mt-3" id="loading-title">Creating your GIF...</div>
+      <div class="text-xs text-gray-500 mt-1" id="loading-desc">Rendering frames locally</div>
+      <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
+        <div id="loading-bar" class="bg-blue-600 h-full w-0 transition-all duration-200"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/ios-gifmaker.js?v=20261019_fix3"></script>
+</body>
+</html>

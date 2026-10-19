@@ -1,0 +1,183 @@
+<!-- Web GIF Studio 核心交互区 -->
+<div id="web-gif-studio" class="mt-12 max-w-3xl mx-auto bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 text-left">
+  
+  <!-- 模式切换 Switcher -->
+  <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+    <div>
+      <h3 class="text-base font-bold text-gray-900">Web GIF Studio</h3>
+      <p class="text-xs text-gray-500">100% 浏览器本地离线计算 · 零服务器上传 · 零流量消耗</p>
+    </div>
+    <div class="inline-flex p-1 bg-gray-100 rounded-full border border-gray-200">
+      <button type="button" id="tab-mode-video" class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-primary text-white shadow-sm">
+        视频转 GIF
+      </button>
+      <button type="button" id="tab-mode-images" class="px-4 py-1.5 rounded-full text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all">
+        多图拼 GIF (连环画)
+      </button>
+    </div>
+  </div>
+
+  <!-- 拖拽上传区 -->
+  <div id="studio-dropzone" class="border-2 border-dashed border-gray-200 hover:border-primary/60 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 bg-gray-50/50 hover:bg-primary/5">
+    <input type="file" id="studio-file-input" accept="video/*" class="hidden" />
+    <div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+      </svg>
+    </div>
+    <h3 id="drop-title" class="text-lg font-bold text-gray-800 mb-1">选择或拖拽文件到这里</h3>
+    <p id="drop-sub" class="text-sm text-gray-500 mb-4">支持 MP4、MOV、WebM，100% 浏览器本地离线转换，不消耗流量不上传云端</p>
+    <button type="button" class="px-6 py-2.5 rounded-full bg-primary text-white text-sm font-semibold shadow hover:opacity-90 transition">
+      选择本地文件
+    </button>
+  </div>
+
+  <!-- 模式 1: 视频处理工作台 (上传后展开) -->
+  <div id="studio-workspace" class="hidden space-y-6">
+    <div class="relative bg-black rounded-2xl overflow-hidden shadow-inner flex items-center justify-center max-h-[360px]">
+      <video id="studio-video" class="max-h-[360px] w-auto mx-auto" controls playsinline></video>
+    </div>
+
+    <!-- 裁剪控制区 (Timeline Trim) -->
+    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">裁剪时间轴 (Trim Range)</span>
+        <span class="text-xs text-primary font-medium">截取时长: <strong id="studio-duration-val">0.0s</strong></span>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">起始点: <span id="studio-start-val" class="font-bold text-gray-800">0.0s</span></label>
+          <input type="range" id="studio-trim-start" step="0.1" class="w-full accent-primary cursor-pointer" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">结束点: <span id="studio-end-val" class="font-bold text-gray-800">0.0s</span></label>
+          <input type="range" id="studio-trim-end" step="0.1" class="w-full accent-primary cursor-pointer" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模式 2: 多图拼合预览工作台 (选择图片后展开) -->
+  <div id="studio-workspace-images" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">已选图片序列 (可拖拽或删除)</span>
+      <div class="flex items-center gap-2">
+        <button type="button" id="studio-btn-add-more" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition">
+          + 添加更多图片
+        </button>
+        <button type="button" id="studio-btn-reset-imgs" class="text-xs text-gray-400 hover:text-red-500 transition">
+          清空重选
+        </button>
+      </div>
+    </div>
+
+    <!-- 图片序列横向网格 -->
+    <div id="studio-img-list" class="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-[240px] overflow-y-auto p-2 border border-gray-100 rounded-2xl bg-gray-50/50">
+      <!-- 动态注入单张缩略图 -->
+    </div>
+
+    <!-- 单帧停留时间调节 -->
+    <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100 flex items-center justify-between">
+      <div>
+        <label class="block text-xs font-semibold text-gray-700">每帧停留时间</label>
+        <span class="text-[11px] text-gray-400">控制每张照片轮播切换的快慢</span>
+      </div>
+      <div class="w-40">
+        <select id="studio-img-delay" class="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-primary">
+          <option value="0.2">0.2 秒 (极速快闪)</option>
+          <option value="0.5" selected>0.5 秒 (推荐正常)</option>
+          <option value="1.0">1.0 秒 (较慢)</option>
+          <option value="2.0">2.0 秒 (缓慢幻灯片)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 公共核心参数调优 (FPS, 分辨率, 倒放, 鬼畜 Boomerang) -->
+  <div class="mt-6 space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">帧率 (FPS)</label>
+        <select id="studio-fps" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-primary">
+          <option value="5">5 FPS (超小体积)</option>
+          <option value="10" selected>10 FPS (推荐平衡)</option>
+          <option value="15">15 FPS (丝滑流畅)</option>
+          <option value="20">20 FPS (高清高刷)</option>
+        </select>
+      </div>
+
+      <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">分辨率 (Resolution)</label>
+        <select id="studio-resolution" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-primary">
+          <option value="240">240p (表情包专属)</option>
+          <option value="360" selected>360p (标清平衡)</option>
+          <option value="480">480p (高清)</option>
+          <option value="original">Original (原生比例)</option>
+        </select>
+      </div>
+
+      <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">播放倍速</label>
+        <select id="studio-speed" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-primary">
+          <option value="0.5">0.5x 慢放</option>
+          <option value="1.0" selected>1.0x 原速</option>
+          <option value="1.5">1.5x 加速</option>
+          <option value="2.0">2.0x 极速</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 高阶动效开关 (倒放 & 鬼畜 Boomerang) -->
+    <div class="flex flex-wrap items-center gap-6 px-1">
+      <label class="inline-flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" id="studio-reverse" class="w-4 h-4 text-primary rounded accent-primary" />
+        <span class="text-sm font-medium text-gray-700">倒放模式 (Reverse)</span>
+      </label>
+      <label class="inline-flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" id="studio-boomerang" class="w-4 h-4 text-primary rounded accent-primary" />
+        <span class="text-sm font-medium text-gray-700">Boomerang 往返循环</span>
+      </label>
+      <button type="button" id="studio-btn-reset" class="text-xs text-gray-400 hover:text-red-500 ml-auto transition">
+        重选文件
+      </button>
+    </div>
+
+    <!-- 进度条 -->
+    <div id="studio-progress-box" class="hidden space-y-2">
+      <div class="flex justify-between text-xs text-gray-500">
+        <span id="studio-progress-text">正在本地处理...</span>
+      </div>
+      <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+        <div id="studio-progress-bar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- 生成按钮 -->
+    <button type="button" id="studio-btn-generate" class="w-full py-3.5 rounded-2xl bg-primary text-white font-bold text-base shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      立即生成 GIF 动图
+    </button>
+  </div>
+
+  <!-- 生成结果展示与下载 -->
+  <div id="studio-result-box" class="hidden mt-6 pt-6 border-t border-gray-100 text-center space-y-4">
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold">
+      <span>✓ 本地转换完成</span>
+      <span>•</span>
+      <span id="studio-result-size">-- KB</span>
+    </div>
+
+    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-center">
+      <img id="studio-result-img" class="max-h-[360px] rounded-lg shadow-md" alt="Generated GIF" />
+    </div>
+
+    <div class="flex items-center justify-center gap-4">
+      <button type="button" id="studio-btn-download" class="px-8 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow hover:opacity-95 transition">
+        下载保存 GIF 动图
+      </button>
+    </div>
+  </div>
+</div>
