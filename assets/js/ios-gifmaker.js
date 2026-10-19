@@ -197,10 +197,17 @@
     loadVideoSource(file);
   });
 
-  // 监听连拍相片选入
+  // 监听连拍相片选入 (严格还原原版：连拍必须至少 2 张以上照片)
   fileImages.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
     if (!files || files.length === 0) return;
+    if (files.length === 1) {
+      alert('原版连拍合成（Burst to GIF）需要至少选择 2 张及以上连续动作照片。
+
+若是苹果实况照片（Live Photo），请在首页点击【Live Photos to GIF】导入。');
+      fileImages.value = '';
+      return;
+    }
     loadBurstFromFiles(files);
   });
 
@@ -679,50 +686,7 @@
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-      // 单张照片：自动生成细腻丝滑的呼吸微动效果 (Cinemagraph / Live Photo)
-      if (state.burstImages.length === 1) {
-        updateLoadingProgress(30, 'Generating live photo motion...');
-        const file = state.burstImages[0];
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        await new Promise(r => img.onload = r);
-
-        let targetWidth = 720;
-        if (state.resolution === 240) targetWidth = 240;
-        else if (state.resolution === 360) targetWidth = 360;
-        else if (state.resolution === 480) targetWidth = 480;
-        else if (state.resolution === 720) targetWidth = 720;
-        else if (state.resolution === 'original') targetWidth = Math.min(1080, img.width);
-
-        const aspect = img.width / img.height;
-        const targetHeight = Math.round(targetWidth / aspect);
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        const numFrames = 10;
-        const frames = [];
-        for (let i = 0; i < numFrames; i++) {
-          const progress = i / (numFrames - 1);
-          const scale = 1.0 + 0.035 * Math.sin(progress * Math.PI);
-          const sw = img.width / scale;
-          const sh = img.height / scale;
-          const sx = (img.width - sw) / 2;
-          const sy = (img.height - sh) * 0.35;
-
-          ctx.clearRect(0, 0, targetWidth, targetHeight);
-          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
-          frames.push({
-            dataUrl: canvas.toDataURL('image/jpeg', 0.95),
-            height: targetHeight
-          });
-          updateLoadingProgress(30 + Math.round((i / numFrames) * 35), "Generating frame " + (i + 1));
-        }
-
-        const delay = 0.12 / state.speed;
-        updateLoadingProgress(70, 'Encoding Ultra-HD GIF...');
-        encodeGifWithGifshot(frames, targetWidth, targetHeight, delay, (frames.length * delay));
-        return;
-      }
+// 已移除单张静态图伪推拉逻辑，严格遵循原版连拍合成
 
       // 多张连续照片 (Bursts)
       let targetWidth = 720;
@@ -780,7 +744,7 @@
     if (state.resolution === 240) sampleRate = 10;
     else if (state.resolution === 360) sampleRate = 6;
     else if (state.resolution === 480) sampleRate = 4;
-    else if (state.resolution === 720 || state.resolution === 'original') sampleRate = 2;
+    else if (state.resolution === 720 || state.resolution === 'original') sampleRate = 1;
 
     gifshot.createGIF({
       images: rawImages,
