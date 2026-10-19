@@ -698,7 +698,7 @@
       gifWidth: width,
       gifHeight: height,
       interval: frameInterval,
-      numWorkers: 0, // 设为 0：直接在主线程同步快速处理，彻底避免移动端 Safari Worker postMessage 丢失或拒绝
+      numWorkers: 2, // 使用 Worker 线程加速编码
       sampleInterval: 10,
       progressCallback: (pct) => {
         const p = 70 + Math.round(pct * 28);

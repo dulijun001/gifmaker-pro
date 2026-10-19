@@ -413,6 +413,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* 进度弹窗 */
 .ios-modal-overlay {
   position: fixed;
