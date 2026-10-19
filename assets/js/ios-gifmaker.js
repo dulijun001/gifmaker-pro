@@ -202,10 +202,8 @@
     const files = Array.from(e.target.files);
     if (!files || files.length === 0) return;
     if (files.length === 1) {
-      alert('原版连拍合成（Burst to GIF）需要至少选择 2 张及以上连续动作照片。
-
-若是苹果实况照片（Live Photo），请在首页点击【Live Photos to GIF】导入。');
-      fileImages.value = '';
+      alert("连拍合成（Burst to GIF）需要至少选择 2 张及以上连续动作照片。如需制作实况照片，请点击 Live Photos to GIF。");
+      fileImages.value = "";
       return;
     }
     loadBurstFromFiles(files);
